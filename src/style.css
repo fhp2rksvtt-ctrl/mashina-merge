@@ -1,0 +1,90 @@
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #11151f;
+  color: #e8ecf5;
+  font-family: system-ui, sans-serif;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* O'yin ustuni: panel + maydon. Ekranga eni va bo'yi bo'yicha sig'adigan qilib kichrayadi */
+#app {
+  position: relative;
+  width: min(400px, 100vw, calc((100vh - 56px) * 400 / 600));
+}
+
+.panel {
+  height: 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 12px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+.keyingi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#keyingi {
+  display: inline-block;
+  border-radius: 50%;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  touch-action: none; /* barmoq bilan surganda sahifa siljimasin */
+  cursor: pointer;
+}
+
+/* "O'yin tugadi" oynasi butun o'yin ustini qoplaydi */
+.tugadi {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background: rgba(17, 21, 31, 0.85);
+  border-radius: 12px;
+}
+
+.tugadi h2 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.tugadi p {
+  margin: 0;
+  font-size: 20px;
+}
+
+.tugadi button {
+  margin-top: 12px;
+  padding: 12px 28px;
+  font-size: 18px;
+  border: none;
+  border-radius: 10px;
+  background: #f2c14e;
+  color: #1e2433;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tugadi .yangi-rekord {
+  color: #f2c14e;
+  font-weight: 600;
+}
