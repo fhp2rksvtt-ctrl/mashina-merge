@@ -4,7 +4,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #11151f;
+  background: radial-gradient(circle at 50% 30%, #1c2437 0%, #0c0f17 75%);
   color: #e8ecf5;
   font-family: system-ui, sans-serif;
 }
@@ -16,7 +16,31 @@ body {
 /* O'yin ustuni: panel + maydon. Ekranga eni va bo'yi bo'yicha sig'adigan qilib kichrayadi */
 #app {
   position: relative;
-  width: min(400px, 100vw, calc((100vh - 56px) * 400 / 600));
+  width: min(400px, 100vw, calc((100vh - 56px - 40px) * 400 / 600));
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Mashinalar zanjiri: kichikdan kattaga 11 ta nuqta */
+.zanjir {
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.zanjir span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  opacity: 0.2;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.zanjir span.ochilgan {
+  opacity: 1;
+  transform: scale(1.5);
 }
 
 .panel {
@@ -26,7 +50,18 @@ body {
   align-items: center;
   padding: 0 12px;
   box-sizing: border-box;
-  font-size: 16px;
+  font-size: 15px;
+}
+
+.ovoz-tugma {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: #1e2433;
+  font-size: 18px;
+  cursor: pointer;
 }
 
 .keyingi {
@@ -45,12 +80,13 @@ canvas {
   width: 100%;
   height: auto;
   border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   touch-action: none; /* barmoq bilan surganda sahifa siljimasin */
   cursor: pointer;
 }
 
-/* "O'yin tugadi" oynasi butun o'yin ustini qoplaydi */
-.tugadi {
+/* "Boshlash" va "O'yin tugadi" oynalari butun o'yin ustini qoplaydi */
+.oyna {
   position: absolute;
   inset: 0;
   display: flex;
@@ -60,19 +96,32 @@ canvas {
   gap: 8px;
   background: rgba(17, 21, 31, 0.85);
   border-radius: 12px;
+  padding: 24px;
+  box-sizing: border-box;
+  text-align: center;
 }
 
-.tugadi h2 {
+.oyna h1 {
+  margin: 0 0 8px;
+  font-size: 36px;
+  color: #f2c14e;
+}
+
+.oyna p {
+  max-width: 280px;
+}
+
+.oyna h2 {
   margin: 0;
   font-size: 32px;
 }
 
-.tugadi p {
+.oyna p {
   margin: 0;
   font-size: 20px;
 }
 
-.tugadi button {
+.oyna button {
   margin-top: 12px;
   padding: 12px 28px;
   font-size: 18px;
@@ -84,7 +133,32 @@ canvas {
   cursor: pointer;
 }
 
-.tugadi .yangi-rekord {
+.oyna .yangi-rekord {
   color: #f2c14e;
   font-weight: 600;
+}
+
+.oyna button.ikkinchi {
+  background: #2a9d8f;
+  color: #fff;
+}
+
+/* Til tanlash tugmalari: kichik va ko'zga tashlanmaydigan */
+.oyna .tillar {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.oyna .tillar button {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 13px;
+  background: #1e2433;
+  color: #9aa5bd;
+}
+
+.oyna .tillar button.tanlangan {
+  background: #4a5570;
+  color: #fff;
 }

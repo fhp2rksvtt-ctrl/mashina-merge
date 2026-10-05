@@ -1,5 +1,6 @@
 import Matter from 'matter-js'
 import './style.css'
+import { t, tilTanla, hozirgiTil, mashinaNomi } from './tillar.js'
 
 const { Engine, Render, Runner, Bodies, Body, Composite, Events } = Matter
 
@@ -12,19 +13,20 @@ const KUTISH = 500 // tashlagandan keyin yangisi chiqquncha kutish (ms)
 const CHIZIQ_Y = 110 // qizil chiziq: doiralar bundan yuqorida uzoq tursa o'yin tugaydi
 const CHIZIQ_VAQTI = 2000 // chiziqdan yuqorida necha ms tursa yutqaziladi
 
-// Mashina darajalari: nomi, doira o'lchami, rangi va kuzov shakli
+// Mashina darajalari: doira o'lchami, rangi va kuzov shakli. Nomlari tillar.js da.
+// Nomlar ataylab umumiy so'zlar: haqiqiy avtomobil brendlari nomini ishlatib bo'lmaydi
 const darajalar = [
-  { nom: 'Tico', radius: 16, rang: '#f2c14e', shakl: 'xetchbek' },
-  { nom: 'Matiz', radius: 22, rang: '#e76f51', shakl: 'xetchbek' },
-  { nom: 'Damas', radius: 28, rang: '#2a9d8f', shakl: 'furgon' },
-  { nom: 'Spark', radius: 34, rang: '#8ab4f8', shakl: 'xetchbek' },
-  { nom: 'Nexia', radius: 42, rang: '#c77dff', shakl: 'sedan' },
-  { nom: 'Cobalt', radius: 50, rang: '#ff6b6b', shakl: 'sedan' },
-  { nom: 'Gentra', radius: 58, rang: '#4ecdc4', shakl: 'sedan' },
-  { nom: 'Onix', radius: 68, rang: '#ffa94d', shakl: 'sedan' },
-  { nom: 'Tracker', radius: 78, rang: '#74c0fc', shakl: 'jip' },
-  { nom: 'Malibu', radius: 90, rang: '#b197fc', shakl: 'sedan' },
-  { nom: 'Tahoe', radius: 104, rang: '#69db7c', shakl: 'jip' },
+  { radius: 16, rang: '#f2c14e', shakl: 'xetchbek' },
+  { radius: 22, rang: '#e76f51', shakl: 'xetchbek' },
+  { radius: 28, rang: '#2a9d8f', shakl: 'furgon' },
+  { radius: 34, rang: '#8ab4f8', shakl: 'xetchbek' },
+  { radius: 42, rang: '#c77dff', shakl: 'sedan' },
+  { radius: 50, rang: '#ff6b6b', shakl: 'sedan' },
+  { radius: 58, rang: '#4ecdc4', shakl: 'sedan' },
+  { radius: 68, rang: '#ffa94d', shakl: 'sedan' },
+  { radius: 78, rang: '#74c0fc', shakl: 'jip' },
+  { radius: 90, rang: '#b197fc', shakl: 'sedan' },
+  { radius: 104, rang: '#69db7c', shakl: 'jip' },
 ]
 
 // Kuzov shakllari. O'lchamlar doira radiusiga nisbatan (1 = radius).
@@ -41,25 +43,50 @@ const TUSHADIGAN_DARAJALAR = 5 // tepadan faqat birinchi 5 ta daraja tushadi
 const app = document.querySelector('#app')
 app.innerHTML = `
   <div class="panel">
-    <div>Ochko: <b id="ochko">0</b></div>
-    <div>Rekord: <b id="rekord">0</b></div>
-    <div class="keyingi">Keyingi: <b id="keyingiNom"></b><span id="keyingi"></span></div>
+    <div><span data-t="ochko"></span>: <b id="ochko">0</b></div>
+    <div><span data-t="rekord"></span>: <b id="rekord">0</b></div>
+    <div class="keyingi"><span data-t="keyingi"></span>: <b id="keyingiNom"></b><span id="keyingi"></span></div>
+    <button id="ovozTugma" class="ovoz-tugma" aria-label="Ovoz"></button>
   </div>
-  <div id="tugadi" class="tugadi" hidden>
-    <h2>O'yin tugadi</h2>
-    <p>Ochko: <b id="yakuniyOchko">0</b></p>
-    <p id="yangiRekord" class="yangi-rekord" hidden>Yangi rekord!</p>
-    <button id="qayta">Qayta boshlash</button>
+  <div id="zanjir" class="zanjir"></div>
+  <div id="boshlash" class="oyna">
+    <h1>Mashina Merge</h1>
+    <p data-t="qoida1"></p>
+    <p data-t="qoida2"></p>
+    <button id="boshla" data-t="boshlash"></button>
+    <div class="tillar">
+      <button data-til="uz">UZ</button>
+      <button data-til="ru">RU</button>
+      <button data-til="en">EN</button>
+    </div>
+  </div>
+  <div id="tugadi" class="oyna" hidden>
+    <h2 data-t="tugadi"></h2>
+    <p><span data-t="ochko"></span>: <b id="yakuniyOchko">0</b></p>
+    <p id="yangiRekord" class="yangi-rekord" data-t="yangiRekord" hidden></p>
+    <button id="davom" class="ikkinchi" data-t="davom" hidden></button>
+    <button id="qayta" data-t="qayta"></button>
   </div>
 `
+
+// data-t="kalit" yozilgan har bir elementga hozirgi tildagi yozuvni qo'yadi
+function matnlarniQoy() {
+  for (const el of app.querySelectorAll('[data-t]')) {
+    el.textContent = t(el.dataset.t)
+  }
+}
+
 const ochkoYozuvi = document.querySelector('#ochko')
 const rekordYozuvi = document.querySelector('#rekord')
 const keyingiBelgi = document.querySelector('#keyingi')
 const keyingiNom = document.querySelector('#keyingiNom')
 const tugadiOynasi = document.querySelector('#tugadi')
+const davomTugma = document.querySelector('#davom')
+const zanjir = document.querySelector('#zanjir')
 
 // Engine = fizika "dvigateli": tortishish, urilish va dumalashni hisoblaydi
 const engine = Engine.create()
+const runner = Runner.create() // fizikani har kadrda bir qadam yurgizadi
 
 // Render = hisoblangan narsani ekranga chizadi
 const render = Render.create({
@@ -69,12 +96,18 @@ const render = Render.create({
     width: ENI,
     height: BOYI,
     wireframes: false,
-    background: '#1e2433',
+    // Fon: tepadan pastga qorayib boradi, ustida garaj darvozasidek xira gorizontal chiziqlar
+    background:
+      'repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 2px, transparent 2px 40px), ' +
+      'linear-gradient(180deg, #2a3553 0%, #1a2032 55%, #121724 100%)',
   },
 })
 
+// Mashinalar zanjiri o'yin maydonining tagida turadi (Render maydonni app oxiriga qo'shgan)
+app.append(zanjir)
+
 // Quti: pol va ikki devor. isStatic = qimirlamaydi
-const devorUslubi = { isStatic: true, render: { fillStyle: '#4a5570' } }
+const devorUslubi = { isStatic: true, render: { fillStyle: '#262b38' } }
 const pol = Bodies.rectangle(ENI / 2, BOYI - DEVOR / 2, ENI, DEVOR, devorUslubi)
 const chapDevor = Bodies.rectangle(DEVOR / 2, BOYI / 2, DEVOR, BOYI, devorUslubi)
 const ongDevor = Bodies.rectangle(ENI - DEVOR / 2, BOYI / 2, DEVOR, BOYI, devorUslubi)
@@ -96,29 +129,33 @@ function doiraYasa(x, y, daraja, qotgan) {
 // Rekord brauzer xotirasida (localStorage) saqlanadi: sahifa yopilsa ham yo'qolmaydi.
 // Ba'zi brauzerlarda (masalan maxfiy rejimda) xotira yopiq bo'lishi mumkin, shuning uchun try/catch
 const REKORD_KALITI = 'mashina-merge-rekord'
+const OVOZ_KALITI = 'mashina-merge-ovoz'
+const TIL_KALITI = 'mashina-merge-til'
 
-function rekordniOqi() {
+function xotiradanOqi(kalit) {
   try {
-    return Number(localStorage.getItem(REKORD_KALITI)) || 0
+    return localStorage.getItem(kalit)
   } catch {
-    return 0
+    return null
   }
 }
 
-function rekordniSaqla(qiymat) {
+function xotiragaYoz(kalit, qiymat) {
   try {
-    localStorage.setItem(REKORD_KALITI, qiymat)
+    localStorage.setItem(kalit, qiymat)
   } catch {
     // saqlab bo'lmasa ham o'yin davom etaveradi
   }
 }
 
 // O'yin holati
-let rekord = rekordniOqi()
+let rekord = Number(xotiradanOqi(REKORD_KALITI)) || 0
 let rekordYangilandi = false // shu o'yinda rekord yangilandimi
 rekordYozuvi.textContent = rekord
 let ochko = 0
 let tugadi = false
+let davomIshlatildi = false // "reklama ko'rib davom etish" bir o'yinda bir marta
+let engKatta = -1 // shu o'yinda yetilgan eng katta daraja
 let keyingiDaraja = tasodifiyDaraja()
 
 // Qo'ldagi doira: tepada turadi, o'yinchi uni chap-o'ngga suradi
@@ -137,17 +174,36 @@ function ochkoQosh(soni) {
     rekord = ochko
     rekordYangilandi = true
     rekordYozuvi.textContent = rekord
-    rekordniSaqla(rekord)
+    xotiragaYoz(REKORD_KALITI, rekord)
   }
 }
 
 // Paneldagi "Keyingi" belgisini keyingi doiraning rangi va o'lchamiga moslaydi
 function keyingiKorsat() {
   const d = darajalar[keyingiDaraja]
-  keyingiNom.textContent = d.nom
+  keyingiNom.textContent = mashinaNomi(keyingiDaraja)
   keyingiBelgi.style.background = d.rang
   keyingiBelgi.style.width = d.radius + 'px'
   keyingiBelgi.style.height = d.radius + 'px'
+}
+
+// Zanjir: 11 ta nuqta. O'yinchi yetgan darajalar yorqin, qolganlari xira
+for (const d of darajalar) {
+  const nuqta = document.createElement('span')
+  nuqta.style.background = d.rang
+  zanjir.append(nuqta)
+}
+
+function darajagaYetildi(daraja) {
+  engKatta = Math.max(engKatta, daraja)
+  zanjirniYangila()
+}
+
+function zanjirniYangila() {
+  ;[...zanjir.children].forEach((nuqta, i) => {
+    nuqta.classList.toggle('ochilgan', i <= engKatta)
+    nuqta.title = mashinaNomi(i)
+  })
 }
 
 // x ni doira devordan chiqib ketmaydigan qilib cheklaydi
@@ -186,6 +242,7 @@ function tashla() {
   const tushadigan = doiraYasa(qoldagi.position.x, TASHLASH_Y, qoldagi.daraja, false)
   Composite.remove(engine.world, qoldagi)
   Composite.add(engine.world, tushadigan)
+  darajagaYetildi(tushadigan.daraja)
   qoldagi = null
 
   setTimeout(yangiQoldagi, KUTISH)
@@ -209,14 +266,43 @@ render.canvas.addEventListener('pointerup', (e) => {
 
 // Ovoz: brauzer faqat o'yinchi birinchi marta bosgandan keyin ovoz chiqarishga ruxsat beradi
 let audio = null
+let ovozYoniq = xotiradanOqi(OVOZ_KALITI) !== 'yoq' // o'yinchi o'chirib qo'ygan bo'lsa eslab qolamiz
 
 function ovozniYoq() {
   if (!audio) audio = new AudioContext()
 }
 
+// Pauza: reklama paytida va o'yin oynasi yashiringanda (boshqa ilovaga o'tilganda)
+// fizika ham, ovoz ham to'xtaydi. Ikkala sabab ham yo'qolgandagina o'yin davom etadi
+let reklamaPauzasi = false
+
+function pauzaniYangila() {
+  const pauza = reklamaPauzasi || document.hidden
+  runner.enabled = !pauza
+  if (audio) {
+    if (pauza) audio.suspend()
+    else audio.resume()
+  }
+}
+
+document.addEventListener('visibilitychange', pauzaniYangila)
+
+const ovozTugma = document.querySelector('#ovozTugma')
+
+function ovozTugmaniYangila() {
+  ovozTugma.textContent = ovozYoniq ? '🔊' : '🔇'
+}
+
+ovozTugma.addEventListener('click', () => {
+  ovozYoniq = !ovozYoniq
+  xotiragaYoz(OVOZ_KALITI, ovozYoniq ? 'ha' : 'yoq')
+  ovozTugmaniYangila()
+})
+ovozTugmaniYangila()
+
 // Qisqa "pik" tovushi. Daraja qancha katta bo'lsa, tovush shuncha baland
 function ovozChal(daraja) {
-  if (!audio) return
+  if (!audio || !ovozYoniq) return
 
   const tovush = audio.createOscillator()
   const balandlik = audio.createGain()
@@ -258,6 +344,7 @@ function birlashtir(a, b) {
   if (yangiDaraja >= darajalar.length) return
 
   Composite.add(engine.world, doiraYasa(x, y, yangiDaraja, false))
+  darajagaYetildi(yangiDaraja)
 }
 
 // Fizika dvigateli har safar ikki jism bir-biriga tekkanida shu yerga xabar beradi
@@ -308,6 +395,8 @@ function oyinTugadi() {
   }
   document.querySelector('#yakuniyOchko').textContent = ochko
   document.querySelector('#yangiRekord').hidden = !rekordYangilandi
+  // "Davom etish" faqat reklama bor joyda (Yandex Games) va bir o'yinda bir marta
+  davomTugma.hidden = !ysdk || davomIshlatildi
   tugadiOynasi.hidden = false
 }
 
@@ -316,12 +405,104 @@ function qaytaBoshla() {
   ochko = 0
   ochkoYozuvi.textContent = 0
   rekordYangilandi = false
+  davomIshlatildi = false
+  engKatta = -1
+  zanjirniYangila()
   tugadi = false
   tugadiOynasi.hidden = true
   yangiQoldagi()
 }
 
-document.querySelector('#qayta').addEventListener('click', qaytaBoshla)
+// Mukofot: qutining yuqori yarmidagi mashinalar olib tashlanadi va o'yin davom etadi
+function davomEt() {
+  davomIshlatildi = true
+  for (const doira of tushganDoiralar()) {
+    if (doira.position.y < BOYI / 2) Composite.remove(engine.world, doira)
+    else doira.yuqoriVaqt = 0
+  }
+  tugadi = false
+  tugadiOynasi.hidden = true
+  yangiQoldagi()
+}
+
+// --- Yandex Games ---
+// ysdk faqat o'yin Yandex Games ichida ochilganda bo'ladi. Boshqa joyda (GitHub Pages,
+// kompyuterda) u null bo'lib qoladi va o'yin reklamasiz ishlayveradi
+let ysdk = null
+
+function sdkOrnat(sdk) {
+  ysdk = sdk
+  // Yandex talabi: o'yin tili platforma tiliga mos bo'lishi kerak.
+  // O'yinchi tilni o'zi tanlagan bo'lsa, uning tanlovi ustun turadi
+  if (!xotiradanOqi(TIL_KALITI)) tilniOrnat(sdk.environment.i18n.lang, 'en')
+}
+
+function yandexniUla() {
+  if (!import.meta.env.VITE_YANDEX) return Promise.resolve()
+
+  return new Promise((tayyor) => {
+    const skript = document.createElement('script')
+    skript.src = '/sdk.js' // Yandex o'z serveridan beradi
+    skript.onload = () => {
+      window.YaGames.init()
+        .then(sdkOrnat)
+        .catch(() => {})
+        .then(tayyor)
+    }
+    skript.onerror = tayyor
+    document.head.append(skript)
+  })
+}
+
+// To'liq ekranli reklama (o'yinlar orasida). Reklama yopilgach "keyin" chaqiriladi.
+// Reklama bo'lmasa yoki xato chiqsa ham o'yin to'xtab qolmasligi kerak
+function oraliqReklama(keyin) {
+  if (!ysdk) return keyin()
+
+  let tugadiMi = false
+  const yakun = () => {
+    if (tugadiMi) return
+    tugadiMi = true
+    reklamaPauzasi = false
+    pauzaniYangila()
+    keyin()
+  }
+
+  reklamaPauzasi = true
+  pauzaniYangila()
+  ysdk.adv.showFullscreenAdv({ callbacks: { onClose: yakun, onError: yakun } })
+}
+
+// Mukofotli reklama: oxirigacha ko'rilsa (onRewarded) o'yin davom etadi
+function mukofotliReklama() {
+  let mukofot = false
+  let yopildi = false
+  const yakun = () => {
+    if (yopildi) return
+    yopildi = true
+    reklamaPauzasi = false
+    pauzaniYangila()
+    if (mukofot) davomEt()
+  }
+
+  reklamaPauzasi = true
+  pauzaniYangila()
+  ysdk.adv.showRewardedVideo({
+    callbacks: {
+      onRewarded: () => {
+        mukofot = true
+      },
+      onClose: yakun,
+      onError: yakun,
+    },
+  })
+}
+
+document.querySelector('#qayta').addEventListener('click', () => oraliqReklama(qaytaBoshla))
+davomTugma.addEventListener('click', mukofotliReklama)
+
+// Yandex talabi: o'ng tugma menyusi o'yinga xalaqit bermasin
+app.addEventListener('contextmenu', (e) => e.preventDefault())
 
 // Doira ichiga mashina chizadi. Chizishdan oldin qalam doira markaziga ko'chirilgan
 // va radiusga kattalashtirilgan bo'ladi, shuning uchun bu yerdagi sonlar -1 dan 1 gacha
@@ -384,23 +565,99 @@ function mashinaChiz(c, daraja) {
     c.fillStyle = '#11151f'
     c.font = '600 ' + Math.round(d.radius * 0.26) + 'px system-ui, sans-serif'
     c.textAlign = 'center'
-    c.fillText(d.nom, 0, d.radius * 0.78)
+    c.fillText(mashinaNomi(daraja), 0, d.radius * 0.78, d.radius * 1.2)
   }
+}
+
+// Devor: garajdagi to'siqlardek sariq-qora qiya yo'llar
+function tosiqChiz(c, x, y, eni, boyi) {
+  c.save()
+  c.beginPath()
+  c.rect(x, y, eni, boyi)
+  c.clip() // bundan keyin chizilgan narsa faqat shu to'rtburchak ichida ko'rinadi
+
+  c.fillStyle = '#e0b040'
+  for (let t = y - eni; t < y + boyi + eni; t += 32) {
+    c.beginPath()
+    c.moveTo(x, t)
+    c.lineTo(x + eni, t - eni)
+    c.lineTo(x + eni, t - eni + 16)
+    c.lineTo(x, t + 16)
+    c.closePath()
+    c.fill()
+  }
+
+  // Ichki chetiga soya: devor qalin ko'rinsin
+  c.fillStyle = 'rgba(0, 0, 0, 0.25)'
+  c.fillRect(x, y, eni, boyi)
+  c.restore()
+}
+
+// Pol: asfalt va yo'l chizig'i
+function polChiz(c) {
+  const tepa = BOYI - DEVOR
+  c.fillStyle = '#343a4a'
+  c.fillRect(0, tepa, ENI, DEVOR)
+  c.fillStyle = '#4b5368'
+  c.fillRect(0, tepa, ENI, 2)
+  c.fillStyle = 'rgba(255, 255, 255, 0.55)'
+  for (let x = 14; x < ENI; x += 44) {
+    c.fillRect(x, tepa + 9, 22, 3)
+  }
+}
+
+// Doiraga hajm beradi: tepadan tushgan yorug'lik va cheti bo'ylab to'q hoshiya
+function doiraBezagi(c, jism) {
+  const r = jism.circleRadius
+  const { x, y } = jism.position
+
+  const yorugLik = c.createRadialGradient(x - r * 0.4, y - r * 0.5, r * 0.1, x, y, r)
+  yorugLik.addColorStop(0, 'rgba(255, 255, 255, 0.35)')
+  yorugLik.addColorStop(0.6, 'rgba(255, 255, 255, 0)')
+  yorugLik.addColorStop(1, 'rgba(0, 0, 0, 0.18)')
+  c.fillStyle = yorugLik
+  c.beginPath()
+  c.arc(x, y, r, 0, Math.PI * 2)
+  c.fill()
+
+  c.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+  c.lineWidth = Math.max(1.5, r * 0.05)
+  c.beginPath()
+  c.arc(x, y, r - c.lineWidth / 2, 0, Math.PI * 2)
+  c.stroke()
 }
 
 // Har kadrda Matter doiralarni chizib bo'lgach, ustiga o'zimiznikini chizamiz
 Events.on(render, 'afterRender', () => {
   const c = render.context
 
+  // Quti: devorlar va pol
+  tosiqChiz(c, 0, 0, DEVOR, BOYI - DEVOR)
+  tosiqChiz(c, ENI - DEVOR, 0, DEVOR, BOYI - DEVOR)
+  polChiz(c)
+
   // Mashinalar: har bir doira ustiga, doira bilan birga aylanadi
   for (const jism of Composite.allBodies(engine.world)) {
     if (jism.daraja === undefined) continue
+    doiraBezagi(c, jism)
     c.save()
     c.translate(jism.position.x, jism.position.y)
     c.rotate(jism.angle)
     c.scale(jism.circleRadius, jism.circleRadius)
     mashinaChiz(c, jism.daraja)
     c.restore()
+  }
+
+  // Mo'ljal chizig'i: qo'ldagi mashina qayerga tushishini ko'rsatadi
+  if (qoldagi) {
+    c.setLineDash([4, 10])
+    c.strokeStyle = 'rgba(255, 255, 255, 0.25)'
+    c.lineWidth = 2
+    c.beginPath()
+    c.moveTo(qoldagi.position.x, TASHLASH_Y + qoldagi.circleRadius)
+    c.lineTo(qoldagi.position.x, BOYI - DEVOR)
+    c.stroke()
+    c.setLineDash([])
   }
 
   // "Puf" halqalari: vaqt o'tgan sari kengayadi va xiralashadi
@@ -430,11 +687,42 @@ Events.on(render, 'afterRender', () => {
 
 // Faqat ishlab chiqish paytida: brauzer konsolidan o'yin ichiga qarash uchun
 if (import.meta.env.DEV) {
-  window.oyin = { engine, darajalar, doiraYasa, Matter }
+  window.oyin = { engine, darajalar, doiraYasa, Matter, sdkOrnat }
 }
 
-keyingiKorsat()
-yangiQoldagi()
+// O'yin "Boshlash" bosilgandan keyin boshlanadi. Bu bosish ovozga ham ruxsat beradi
+document.querySelector('#boshla').addEventListener('click', () => {
+  ovozniYoq()
+  document.querySelector('#boshlash').hidden = true
+  yangiQoldagi()
+})
+
+// Tilni almashtiradi va ekrandagi hamma yozuvni yangilaydi
+function tilniOrnat(kod, zaxira) {
+  tilTanla(kod, zaxira)
+  matnlarniQoy()
+  keyingiKorsat()
+  zanjirniYangila()
+  for (const tugma of app.querySelectorAll('[data-til]')) {
+    tugma.classList.toggle('tanlangan', tugma.dataset.til === hozirgiTil())
+  }
+}
+
+// Boshlang'ich ekrandagi UZ / RU / EN tugmalari. Tanlov eslab qolinadi
+for (const tugma of app.querySelectorAll('[data-til]')) {
+  tugma.addEventListener('click', () => {
+    xotiragaYoz(TIL_KALITI, tugma.dataset.til)
+    tilniOrnat(tugma.dataset.til, 'uz')
+  })
+}
+
+// Boshlang'ich til: avval tanlangani, bo'lmasa o'zbekcha. Yandex ichida platforma tili olinadi
+tilniOrnat(xotiradanOqi(TIL_KALITI), 'uz')
 
 Render.run(render)
-Runner.run(Runner.create(), engine)
+Runner.run(runner, engine)
+
+// Yandex'ga "o'yin yuklandi, o'ynasa bo'ladi" deb xabar beramiz
+yandexniUla().then(() => {
+  ysdk?.features.LoadingAPI?.ready()
+})
